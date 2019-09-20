@@ -35,8 +35,8 @@ def write_ply(fo, plys):
         fw.write('polygon {0:10d} ( {1:d} caps, {2:.7f} weight, {3:d} pixel, {4:25.20f} str):\n'.format(
             i, ncaps, weight, pixel, str_))
         for j in range(ncaps):
-            fw.write(
-                '{0:25.20f} {1:25.20f} {2:25.20f} {3:25.20f}\n'.format(caps[j]))
+            fw.write('{0:25.20f} {1:25.20f} {2:25.20f} {3:25.20f}\n'.format(
+                caps[j][0], caps[j][1], caps[j][2], caps[j][3]))
 
     fw.close()
     print(':: Written: {}'.format(fo))
@@ -55,9 +55,9 @@ if __name__ == "__main__":
         ncaps = data['NCAPS'][i]
         caps = data['XCAPS'][i][:ncaps]
         caps = np.column_stack((caps, data['CMCAPS'][i][:ncaps]))
-        weight = data[args.wattr]
-        pixel = data['PIXEL']
-        str_ = data['STR']
+        weight = data[args.wattr][i]
+        pixel = data['PIXEL'][i]
+        str_ = data['STR'][i]
 
         plys[i] = collections.OrderedDict()
         plys[i]['ncaps'] = ncaps
