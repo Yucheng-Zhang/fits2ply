@@ -7,6 +7,7 @@ import collections
 from astropy.io import fits
 import time
 from . import utils
+import re
 
 
 class poly:
@@ -38,6 +39,21 @@ class poly:
 
     def read_ply(self, fn):
         '''Read polygons from .ply file.'''
+        f = open(fn, 'r')
+        line = f.readline()
+        s = re.match(r'(\d+)\s+polygons', line)
+        self.plys['nplys'] = int(s.group(1))
+
+        # identify polygon
+        ex1 = re.compile(r'polygon\s+(\d+)\s+\(\s*(\d+)\s+caps')
+        # check weight
+        ex2 = re.compile(r'(\d*\.?\d+)\s+weight')
+        # check area
+        ex3 = re.compile(r"(\d*\.?\d+)\s+str")
+
+        s = ex1.match(line)
+        # working
+        f.close()
         pass
 
     def write_ply(self, fo):
