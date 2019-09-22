@@ -64,22 +64,39 @@ class poly:
         else:
             return cd < cap[3]
 
+    def _in_ply(self, caps, vec):
+        '''Check if vectors in vec array are in polygon.'''
+        idx = np.arange(vec.shape[0], dtype=np.int32)
+        for cap in caps:
+            idx = idx[self._in_cap(cap, vec[idx])]
+            if idx.shape[0] == 0:
+                break
+
+        res = np.full(vec.shape[0], False, dtype=np.bool)
+        res[idx] = True
+
+        return res
+
     def make_map(self, nside, fo=None, unseen=hp.UNSEEN, ralim=None, declim=None):
         '''Make Healpy map for mask.'''
         npix = hp.nside2npix(nside)
         ipix = np.arange(npix)
-        theta, phi = hp.pix2ang(nside, ipix)
         mask = np.full(npix, unseen)
+        theta_g, phi_g = hp.pix2ang(nside, ipix)  # theta, phi in G
+        ra, dec = utils.get_ra_dec(theta_g, phi_g)
 
         # set RA (0,360) and DEC (-90,90) range to speed up
         if ralim != None or declim != None:
-            ra, dec = utils.get_ra_dec(theta, phi)
+            # cut pixels
             if ralim != None:
                 idx1 = (ra >= ralim[0]) & (ra <= ralim[1])
             if declim != None:
                 idx2 = (dec >= declim[0]) & (dec <= declim[1])
             idx = idx1 & idx2
-            ipix, theta, phi = ipix[idx], theta[idx], phi[idx]
+            ipix, ra, dec = ipix[idx], ra[idx], dec[idx]
+
+        # theta, phi in C
+        theta, phi = np.deg2rad(90.-dec), np.deg2rad(ra)
 
         # x, y, z coords of pixels on unit sphere
         vec = np.column_stack((np.sin(theta) * np.cos(phi),
@@ -91,10 +108,8 @@ class poly:
         t0 = time.time()
         for i in range(self.plys['nplys']):
             print(i)
-            idx = np.full(ipix.shape[0], True, dtype=np.bool)
-            for cap in self.plys[i]['caps']:
-                idx = idx & self._in_cap(cap, vec)
-
+            idx = self._in_ply(self.plys[i]['caps'], vec)
+            # set mask value to polygon weight
             mask[ipix[idx]] = self.plys[i]['weight']
             # cut off the pixels in this polygon to speed up
             ipix = ipix[np.invert(idx)]
